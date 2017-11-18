@@ -1,0 +1,17 @@
+femmesh = App.ActiveDocument.FEMMeshGMSH.FemMesh
+
+inpfilepath = '/tmp/femmeshgroups2esets.inp'
+femmesh.writeABAQUS(inpfilepath)
+
+# reopen file with "append" and add the group data
+inpfile = open(inpfilepath, 'a')
+inpfile.write('\n')
+
+for g in femmesh.Groups:
+    inpfile.write('** GroupID:' + str(g) +  ' --> ' + femmesh.getGroupName(g) + ' --> ' + femmesh.getGroupElementType(g) + '\n')
+    inpfile.write('*NSET, NSET=' + femmesh.getGroupName(g) + '\n')
+    for p, f in App.ActiveDocument.getObject(femmesh.getGroupName(g)).References:
+        for n in femmesh.getNodesByFace(getattr(p.Shape, f[0])):
+            inpfile.write(str(n) + '\n')
+
+inpfile.close()

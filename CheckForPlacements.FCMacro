@@ -1,0 +1,11 @@
+print("Checking replacing all placements with default.")
+print("===============================================")
+for b in App.activeDocument().findObjects("PartDesign::Body"):
+	if not b.Placement.isNull():
+		print("!!! Body {} has a non null placement --> resetting!".format(b.Label))
+
+		b.Placement.Base = FreeCAD.Base.Vector()
+		b.Placement.Rotation = FreeCAD.Base.Rotation()
+	else:
+		print("Body {} looks fine...".format(b.Label))
+print("done...")
