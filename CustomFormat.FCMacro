@@ -1,0 +1,88 @@
+import TechDraw
+import sys
+from PySide2.QtWidgets import QMainWindow, QDialog, QLineEdit, QPushButton, QGridLayout, QLabel
+
+class Form(QDialog):
+
+	defaultformat = "%.5g"
+	symbols = {'-': 'Straightness',
+		       '\u25b1': 'Flatness',
+			   '\u25cb': 'Circularity',
+               '\u232b': 'Cylindricity',
+               '\u2225': 'Parallelism',
+               '\u27c2': 'Perpendicularity',
+               '\u2220': 'Angularity',
+               '\u2312': 'Profile of a line',
+               '\u2313': 'Profile of a surface',
+               '\u2197': 'Circular runout',
+               '\u2330': 'Total runout',
+               '\u2316': 'Position',
+               '\u25ce': 'Concentricity',
+               '\u232f': 'Summetry',
+               'R': 'Radius',
+               '\u2300': 'Diameter',
+               'SR': 'Radius of sphere',
+               'S\u2300': 'Diameter of sphere',
+              }
+	
+	def __init__(self, parent=None):
+		super(Form, self).__init__(parent)
+		self.setWindowTitle("Format Symbols")
+
+		layout = QGridLayout()
+
+		for i, sym in enumerate(self.symbols):
+			btn = QPushButton(sym)
+			btn.clicked.connect(self.addSymbol)
+			btn.setMinimumHeight(36)
+			layout.addWidget(btn, i // 4, (i % 4))
+
+		self.formatspec = QLineEdit(self.defaultformat)
+		self.formatspec.textChanged.connect(self.preview)
+		layout.addWidget(QLabel("Format:", self), 5, 0)
+		layout.addWidget(self.formatspec, 5, 1, 1, 2)
+		
+		reset = QPushButton("Reset")
+		reset.clicked.connect(self.reset)
+		layout.addWidget(reset, 5, 3)
+
+		layout.addWidget(QLabel("Preview:"), 6, 0)
+		self.previewlabel = QLabel("")
+		layout.addWidget(self.previewlabel, 6, 1)
+
+		ok = QPushButton("OK")
+		ok.clicked.connect(self.write)
+		abort = QPushButton("Abort")
+		abort.clicked.connect(self.exit)
+
+		layout.addWidget(ok, 7, 2)
+		layout.addWidget(abort, 7, 3)
+
+
+		self.setLayout(layout)
+
+	def addSymbol(self):
+		self.formatspec.insert(self.sender().text())
+
+	def write(self):
+		for sel in FreeCADGui.Selection.getSelection():
+			if hasattr(sel, "FormatSpec"):
+				# assume it is a Dimension...
+				sel.FormatSpec = self.formatspec.text()
+				sel.recompute()
+		self.close()
+
+	def preview(self):
+		self.previewlabel.setText(self.formatspec.text() % (23.123456))
+
+	def reset(self):
+		self.formatspec.setText(self.defaultformat)
+
+	def exit(self, event):
+		self.close()
+		
+
+
+if __name__ == '__main__':
+	form = Form()
+	form.show()
