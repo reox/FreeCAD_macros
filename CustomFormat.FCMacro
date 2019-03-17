@@ -8,7 +8,7 @@ class Form(QDialog):
 	symbols = {'-': 'Straightness',
 		       '\u25b1': 'Flatness',
 			   '\u25cb': 'Circularity',
-               '\u232b': 'Cylindricity',
+               '\u232d': 'Cylindricity',
                '\u2225': 'Parallelism',
                '\u27c2': 'Perpendicularity',
                '\u2220': 'Angularity',
@@ -24,6 +24,7 @@ class Form(QDialog):
                'SR': 'Radius of sphere',
                'S\u2300': 'Diameter of sphere',
               }
+	previewnumber = 23.123456789
 	
 	def __init__(self, parent=None):
 		super(Form, self).__init__(parent)
@@ -58,8 +59,9 @@ class Form(QDialog):
 		layout.addWidget(ok, 7, 2)
 		layout.addWidget(abort, 7, 3)
 
-
 		self.setLayout(layout)
+	
+		self.preview()
 
 	def addSymbol(self):
 		self.formatspec.insert(self.sender().text())
@@ -73,7 +75,7 @@ class Form(QDialog):
 		self.close()
 
 	def preview(self):
-		self.previewlabel.setText(self.formatspec.text() % (23.123456))
+		self.previewlabel.setText(self.formatspec.text() % (self.previewnumber))
 
 	def reset(self):
 		self.formatspec.setText(self.defaultformat)
