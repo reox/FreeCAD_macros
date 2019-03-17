@@ -1,13 +1,29 @@
-import TechDraw
-import sys
+# Copyright (c) 2019, Sebastian Bachmann <hello@reox.at>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 from PySide2.QtWidgets import QMainWindow, QDialog, QLineEdit, QPushButton, QGridLayout, QLabel
 
 class Form(QDialog):
-
-	defaultformat = "%.5g"
-	symbols = {'-': 'Straightness',
-		       '\u25b1': 'Flatness',
-			   '\u25cb': 'Circularity',
+    defaultformat = "%.5g"
+    symbols = {'-': 'Straightness',
+               '\u25b1': 'Flatness',
+               '\u25cb': 'Circularity',
                '\u232d': 'Cylindricity',
                '\u2225': 'Parallelism',
                '\u27c2': 'Perpendicularity',
@@ -24,67 +40,68 @@ class Form(QDialog):
                'SR': 'Radius of sphere',
                'S\u2300': 'Diameter of sphere',
               }
-	previewnumber = 23.123456789
-	
-	def __init__(self, parent=None):
-		super(Form, self).__init__(parent)
-		self.setWindowTitle("Format Symbols")
+    previewnumber = 23.123456789
 
-		layout = QGridLayout()
+    def __init__(self, parent=None):
+        super(Form, self).__init__(parent)
+        self.setWindowTitle("Format Symbols")
 
-		for i, sym in enumerate(self.symbols):
-			btn = QPushButton(sym)
-			btn.clicked.connect(self.addSymbol)
-			btn.setMinimumHeight(36)
-			layout.addWidget(btn, i // 4, (i % 4))
+        layout = QGridLayout()
 
-		self.formatspec = QLineEdit(self.defaultformat)
-		self.formatspec.textChanged.connect(self.preview)
-		layout.addWidget(QLabel("Format:", self), 5, 0)
-		layout.addWidget(self.formatspec, 5, 1, 1, 2)
-		
-		reset = QPushButton("Reset")
-		reset.clicked.connect(self.reset)
-		layout.addWidget(reset, 5, 3)
+        for i, (sym, desc) in enumerate(self.symbols.items()):
+            btn = QPushButton(sym)
+            btn.setToolTip(desc)
+            btn.clicked.connect(self.addSymbol)
+            btn.setMinimumHeight(36)
+            layout.addWidget(btn, i // 4, (i % 4))
 
-		layout.addWidget(QLabel("Preview:"), 6, 0)
-		self.previewlabel = QLabel("")
-		layout.addWidget(self.previewlabel, 6, 1)
+        tot_lines = i // 4
 
-		ok = QPushButton("OK")
-		ok.clicked.connect(self.write)
-		abort = QPushButton("Abort")
-		abort.clicked.connect(self.exit)
+        self.formatspec = QLineEdit(self.defaultformat)
+        self.formatspec.textChanged.connect(self.preview)
+        layout.addWidget(QLabel("Format:", self), tot_lines + 1, 0)
+        layout.addWidget(self.formatspec, tot_lines + 1, 1, 1, 2)
 
-		layout.addWidget(ok, 7, 2)
-		layout.addWidget(abort, 7, 3)
+        reset = QPushButton("Reset")
+        reset.clicked.connect(self.reset)
+        layout.addWidget(reset, tot_lines + 1, 3)
 
-		self.setLayout(layout)
-	
-		self.preview()
+        layout.addWidget(QLabel("Preview:"), tot_lines + 2, 0)
+        self.previewlabel = QLabel("")
+        layout.addWidget(self.previewlabel, tot_lines + 2, 1)
 
-	def addSymbol(self):
-		self.formatspec.insert(self.sender().text())
+        ok = QPushButton("OK")
+        ok.clicked.connect(self.write)
+        abort = QPushButton("Abort")
+        abort.clicked.connect(self.exit)
 
-	def write(self):
-		for sel in FreeCADGui.Selection.getSelection():
-			if hasattr(sel, "FormatSpec"):
-				# assume it is a Dimension...
-				sel.FormatSpec = self.formatspec.text()
-				sel.recompute()
-		self.close()
+        layout.addWidget(ok, tot_lines + 3, 2)
+        layout.addWidget(abort, tot_lines + 3, 3)
 
-	def preview(self):
-		self.previewlabel.setText(self.formatspec.text() % (self.previewnumber))
+        self.setLayout(layout)
+        self.preview()
 
-	def reset(self):
-		self.formatspec.setText(self.defaultformat)
+    def addSymbol(self):
+        self.formatspec.insert(self.sender().text())
 
-	def exit(self, event):
-		self.close()
-		
+    def write(self):
+        for sel in FreeCADGui.Selection.getSelection():
+            if hasattr(sel, "FormatSpec"):
+                # assume it is a Dimension...
+                sel.FormatSpec = self.formatspec.text()
+                sel.recompute()
+        self.close()
+
+    def preview(self):
+        self.previewlabel.setText(self.formatspec.text() % (self.previewnumber))
+
+    def reset(self):
+        self.formatspec.setText(self.defaultformat)
+
+    def exit(self, event):
+        self.close()
 
 
 if __name__ == '__main__':
-	form = Form()
-	form.show()
+    form = Form()
+    form.show()

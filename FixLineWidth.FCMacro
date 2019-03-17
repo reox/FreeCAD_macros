@@ -1,6 +1,6 @@
 for v in App.activeDocument().findObjects("TechDraw::DrawViewDimension"):
-	v.LineWidth = 0.25
+	# v.LineWidth = 0.25
 	# The precision of %g is how large the value should be, unless it is printed as exponent.
 	# Maybe we need to adjust this later...
 	v.FormatSpec = u"%.5g"
-	v.Fontsize = 3.5
+	# v.Fontsize = 3.5
