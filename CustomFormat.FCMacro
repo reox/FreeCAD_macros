@@ -17,12 +17,21 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from PySide2.QtWidgets import QMainWindow, QDialog, QLineEdit, QPushButton, QGridLayout, QLabel
+from PySide2.QtWidgets import (
+        QMainWindow,
+        QDialog,
+        QLineEdit,
+        QPushButton,
+        QGridLayout,
+        QLabel,
+        QGroupBox,
+        )
 
 class Form(QDialog):
     defaultformat = "%.5g"
-    symbols = {'-': 'Straightness',
-               '\u25b1': 'Flatness',
+    symbols = {'GD&&T': {
+               '\u23e4': 'Straightness',
+               '\u23e5': 'Flatness',
                '\u25cb': 'Circularity',
                '\u232d': 'Cylindricity',
                '\u2225': 'Parallelism',
@@ -34,11 +43,29 @@ class Form(QDialog):
                '\u2330': 'Total runout',
                '\u2316': 'Position',
                '\u25ce': 'Concentricity',
-               '\u232f': 'Summetry',
+               '\u232f': 'Symmetry',
+               },
+              'Modifiers': {
+               '\u24bb': 'Free state',
+               '\u24c1': 'Least material condition (LMC)',
+               '\u24c2': 'Maximum material condition (MMC)',
+               '\u24c5': 'Projected tolerance zone',
+               '\u24c8': 'Regardless of feature size (RFS)',
+               '\u24c9': 'Tangent plane',
+               '\u24ca': 'Unequal Bilateral',
+              },
+              'Radius && Diameter': {
                'R': 'Radius',
                '\u2300': 'Diameter',
                'SR': 'Radius of sphere',
                'S\u2300': 'Diameter of sphere',
+               },
+              'Angles': {
+               '\u00b0': 'Degree',
+               '\u2032': '(Arc) Minute',
+               '\u2033': '(Arc) Second',
+               '\u2034': '(Arc) Tertie',
+               },
               }
     previewnumber = 23.123456789
 
@@ -48,14 +75,22 @@ class Form(QDialog):
 
         layout = QGridLayout()
 
-        for i, (sym, desc) in enumerate(self.symbols.items()):
-            btn = QPushButton(sym)
-            btn.setToolTip(desc)
-            btn.clicked.connect(self.addSymbol)
-            btn.setMinimumHeight(36)
-            layout.addWidget(btn, i // 4, (i % 4))
+        for n, (grp, items) in enumerate(self.symbols.items()):
+            box = QGroupBox(grp)
+            local_layout = QGridLayout()
 
-        tot_lines = i // 4
+            box.setLayout(local_layout)
+            for i, (sym, desc) in enumerate(items.items()):
+                btn = QPushButton(sym)
+                btn.setToolTip(desc)
+                btn.clicked.connect(self.addSymbol)
+                btn.setMinimumHeight(36)
+                local_layout.addWidget(btn, i // 4, i % 4)
+
+            layout.addWidget(box, n, 0, 1, 4)
+
+
+        tot_lines = len(self.symbols)
 
         self.formatspec = QLineEdit(self.defaultformat)
         self.formatspec.textChanged.connect(self.preview)
