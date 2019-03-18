@@ -29,6 +29,8 @@ from PySide2.QtWidgets import (
 
 class Form(QDialog):
     defaultformat = "%.5g"
+
+    # See https://en.wikipedia.org/wiki/Geometric_dimensioning_and_tolerancing#Symbols
     symbols = {'GD&&T': {
                '\u23e4': 'Straightness',
                '\u23e5': 'Flatness',
