@@ -30,7 +30,9 @@ from PySide2.QtWidgets import (
 class Form(QDialog):
     defaultformat = "%.5g"
 
-    # See https://en.wikipedia.org/wiki/Geometric_dimensioning_and_tolerancing#Symbols
+    # See also https://en.wikipedia.org/wiki/Geometric_dimensioning_and_tolerancing#Symbols
+    #          https://github.com/hikikomori82/osifont
+    #          https://de.wikipedia.org/wiki/Unicodeblock_Verschiedene_technische_Zeichen
     symbols = {
         'GD&&T': {
             '\u23e4': 'Straightness',
@@ -49,6 +51,7 @@ class Form(QDialog):
             '\u232f': 'Symmetry',
             },
         'Modifiers': {
+            '\u24ba': 'Hull condition',
             '\u24bb': 'Free state',
             '\u24c1': 'Least material condition (LMC)',
             '\u24c2': 'Maximum material condition (MMC)',
@@ -74,6 +77,14 @@ class Form(QDialog):
             '\u2333': 'Slope',
             '\u2334': 'Counterbore',
             '\u2335': 'Countersink',
+            '\u00b1': 'Plus - Minus',
+            '\u2213': 'Minus - Plus',
+            '\u2104': 'Centerline',
+            '\u2194': 'Left/right arrow',
+            '\u21a7': 'Downward arrow',
+            '\u2375': 'Small omega',
+            '\u03a9': 'Capital omega',
+            '\u00d7': 'Multiplication sign',
             },
         }
     previewnumber = 23.123456789
