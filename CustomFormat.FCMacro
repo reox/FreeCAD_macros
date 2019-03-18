@@ -117,6 +117,8 @@ class Form(QDialog):
 
         self.setLayout(layout)
         self.preview()
+        # Move to the beginning, usually we want to insert here...
+        self.formatspec.setCursorPosition(0)
 
     def addSymbol(self):
         self.formatspec.insert(self.sender().text())
