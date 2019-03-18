@@ -65,6 +65,7 @@ class Form(QDialog):
             '\u2300': 'Diameter',
             'SR': 'Radius of sphere',
             'S\u2300': 'Diameter of sphere',
+            '\u25a1': 'Square',
             },
         'Angles': {
             '\u00b0': 'Degree',
