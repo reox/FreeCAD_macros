@@ -21,27 +21,27 @@
 from __future__ import unicode_literals
 
 try:
-	# The new, good stuff
-	from PySide2.QtWidgets import (
-	        QMainWindow,
-	        QDialog,
-	        QLineEdit,
-	        QPushButton,
-	        QGridLayout,
-	        QLabel,
-	        QGroupBox,
-	        )
+    # The new, good stuff
+    from PySide2.QtWidgets import (
+            QMainWindow,
+            QDialog,
+            QLineEdit,
+            QPushButton,
+            QGridLayout,
+            QLabel,
+            QGroupBox,
+            )
 except ImportError:
-	# Old PySide
-	from PySide.QtGui import (
-        QMainWindow,
-        QDialog,
-        QLineEdit,
-        QPushButton,
-        QGridLayout,
-        QLabel,
-        QGroupBox,
-        )
+    # Old PySide
+    from PySide.QtGui import (
+            QMainWindow,
+            QDialog,
+            QLineEdit,
+            QPushButton,
+            QGridLayout,
+            QLabel,
+            QGroupBox,
+            )
 
 
 class Form(QDialog):
