@@ -89,7 +89,7 @@ class Form(QDialog):
         }
     previewnumber = 23.123456789
 
-    stylesheet = 'font-family: osifont; font-size:2em;'
+    stylesheet = 'font-family: osifont; font-size:24px;'
 
     def __init__(self, parent=None):
         super(Form, self).__init__(parent)
