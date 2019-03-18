@@ -65,7 +65,6 @@ class Form(QDialog):
             '\u2300': 'Diameter',
             'SR': 'Radius of sphere',
             'S\u2300': 'Diameter of sphere',
-            '\u25a1': 'Square',
             },
         'Angles': {
             '\u00b0': 'Degree',
@@ -79,13 +78,13 @@ class Form(QDialog):
             '\u2334': 'Counterbore',
             '\u2335': 'Countersink',
             '\u00b1': 'Plus - Minus',
-            '\u2213': 'Minus - Plus',
             '\u2104': 'Centerline',
             '\u2194': 'Left/right arrow',
             '\u21a7': 'Downward arrow',
             '\u2375': 'Small omega',
             '\u03a9': 'Capital omega',
             '\u00d7': 'Multiplication sign',
+            '\u25a1': 'Square',
             },
         }
     previewnumber = 23.123456789
