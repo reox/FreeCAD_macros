@@ -3,6 +3,9 @@ My and collected macros for FreeCAD - directly from ~/.FreeCAD/Macro
 
 Some macros are not written by me, but copied from other sources. Please inspect the licence of those files individually!
 
+Most of my macros are designed to work with a Python3/QT5 build of FreeCAD!
+Please use a modern version like 0.18 which supports both!
+
 
 ## CustomFormat.FCMacro
 
