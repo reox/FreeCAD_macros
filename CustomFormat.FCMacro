@@ -78,6 +78,8 @@ class Form(QDialog):
         }
     previewnumber = 23.123456789
 
+    stylesheet = 'font-family: osifont; font-size:2em;'
+
     def __init__(self, parent=None):
         super(Form, self).__init__(parent)
         self.setWindowTitle("Format Symbols")
@@ -91,6 +93,7 @@ class Form(QDialog):
             box.setLayout(local_layout)
             for i, (sym, desc) in enumerate(items.items()):
                 btn = QPushButton(sym)
+                btn.setStyleSheet(self.stylesheet)
                 btn.setToolTip(desc)
                 btn.clicked.connect(self.addSymbol)
                 btn.setMinimumHeight(36)
@@ -112,6 +115,7 @@ class Form(QDialog):
 
         layout.addWidget(QLabel("Preview:"), tot_lines + 2, 0)
         self.previewlabel = QLabel("")
+        self.previewlabel.setStyleSheet(self.stylesheet)
         layout.addWidget(self.previewlabel, tot_lines + 2, 1)
 
         ok = QPushButton("OK")
