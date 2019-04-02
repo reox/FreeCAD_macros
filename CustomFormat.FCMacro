@@ -29,6 +29,7 @@ from PySide.QtGui import (
         QGridLayout,
         QLabel,
         QGroupBox,
+        QSpacerItem,
         )
 
 
@@ -56,20 +57,27 @@ class Form(QDialog):
             '\u232f': 'Symmetry',
             },
         'Modifiers': {
-            '\u24ba': 'Hull condition',
-            '\u24bb': 'Free state',
-            '\u24c1': 'Least material condition (LMC)',
-            '\u24c2': 'Maximum material condition (MMC)',
-            '\u24c5': 'Projected tolerance zone',
-            '\u24c8': 'Regardless of feature size (RFS)',
-            '\u24c9': 'Tangent plane',
-            '\u24ca': 'Unequal Bilateral',
+            '\u24b6': 'derived geometry element',  # A, not in osifont
+            '\u24b8': 'Minimax (Tschebyschew)',  # C, not in osifont
+            '\u24ba': 'Hull condition',  # E
+            '\u24bb': 'Free state',  # F
+            '\u24bc': 'Least square geomtry element',  # G, not in osifont
+            '\u24c1': 'Least material condition (LMC)',  # L
+            '\u24c2': 'Maximum material condition (MMC)',  # M
+            '\u24c3': 'least inscribed geometry element',  # N, not in osifont
+            '\u24c5': 'Projected tolerance zone',  # P
+            '\u24c7': 'Reciprocity condition',  # R, not in osifont
+            '\u24c8': 'Regardless of feature size (RFS)',  # S
+            '\u24c9': 'Tangent plane',  # T
+            '\u24ca': 'Unequal Bilateral',  # U
+            '\u24cd': 'most inscribed geomtry element',  # X, not in osifont
             },
         'Radius && Diameter': {
             'R': 'Radius',
             '\u2300': 'Diameter',
             'SR': 'Radius of sphere',
             'S\u2300': 'Diameter of sphere',
+            '\u25a1': 'Square',
             },
         'Angles': {
             '\u00b0': 'Degree',
@@ -86,15 +94,24 @@ class Form(QDialog):
             '\u2104': 'Centerline',
             '\u2194': 'Left/right arrow',
             '\u21a7': 'Downward arrow',
-            '\u2375': 'Small omega',
-            '\u03a9': 'Capital omega',
             '\u00d7': 'Multiplication sign',
-            '\u25a1': 'Square',
             },
+        'Greek Letters': {
+            '\u0394': 'Capital delta',
+            '\u03a3': 'Capital sigma',
+            '\u03a9': 'Capital omega',
+            '\u03bc': 'Small mu',
+            '\u03c3': 'Small sigma',
+            '\u03c6': 'Small phi',
+            '\u2375': 'Small omega',
+
+            }
         }
     previewnumber = 23.123456789
 
     stylesheet = 'font-family: osifont; font-size:24px;'
+
+    columns = 5
 
     def __init__(self, parent=None):
         super(Form, self).__init__(parent)
@@ -113,9 +130,16 @@ class Form(QDialog):
                 btn.setToolTip(desc)
                 btn.clicked.connect(self.addSymbol)
                 btn.setMinimumHeight(36)
-                local_layout.addWidget(btn, i // 4, i % 4)
+                local_layout.addWidget(btn, i // self.columns, i % self.columns)
 
-            layout.addWidget(box, n, 0, 1, 4)
+            # Fill up row
+            if i < self.columns:
+                for x in range(i, self.columns):
+                    # FIXME
+                    # local_layout.addItem(QSpacerItem(btn.width(), btn.height()), x // self.columns, x % self.columns)
+                    pass
+
+            layout.addWidget(box, n, 0, 1, self.columns)
 
 
         tot_lines = len(self.symbols)
@@ -155,6 +179,10 @@ class Form(QDialog):
             if hasattr(sel, "FormatSpec"):
                 # assume it is a Dimension...
                 sel.FormatSpec = self.formatspec.text()
+                sel.recompute()
+            elif hasattr(sel, "Text"):
+                # Looks like a Balloon type feature
+                sel.Text = self.formatspec.text()
                 sel.recompute()
         self.close()
 
