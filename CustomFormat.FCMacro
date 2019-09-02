@@ -189,7 +189,7 @@ class Form(QDialog):
     @property
     def defaultformat(self):
         if len(FreeCADGui.Selection.getSelection()) != 1:
-            return _defaultformat
+            return self._defaultformat
 
         sel = FreeCADGui.Selection.getSelection()[0]
         if hasattr(sel, "FormatSpec"):
@@ -199,7 +199,7 @@ class Form(QDialog):
             # Looks like a Balloon type feature
             return sel.Text
 
-        return _defaultformat
+        return self._defaultformat
 
     def preview(self):
         self.previewlabel.setText(self.formatspec.text() % (self.previewnumber))
