@@ -1,5 +1,7 @@
 """
 This macro creates chain measurements, as it aligns all distances to the same coordinate
+It also re-centers the distance value.
+If only a single distance measure is given, it will only be re-centered.
 
 The first Dimension selected will be the reference.
 
@@ -35,7 +37,7 @@ def center_coord(dim):
 def main():
     sel = FreeCADGui.Selection.getSelection()
 
-    if len(sel) < 2:
+    if len(sel) == 0:
         # Do nothing
         return
 
