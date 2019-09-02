@@ -34,7 +34,7 @@ from PySide.QtGui import (
 
 
 class Form(QDialog):
-    defaultformat = "%.5g"
+    _defaultformat = "%.5g"
 
     # See also https://en.wikipedia.org/wiki/Geometric_dimensioning_and_tolerancing#Symbols
     #          https://github.com/hikikomori82/osifont
@@ -185,6 +185,21 @@ class Form(QDialog):
                 sel.Text = self.formatspec.text()
                 sel.recompute()
         self.close()
+
+    @property
+    def defaultformat(self):
+        if len(FreeCADGui.Selection.getSelection()) != 1:
+            return _defaultformat
+
+        sel = FreeCADGui.Selection.getSelection()[0]
+        if hasattr(sel, "FormatSpec"):
+            # assume it is a Dimension...
+            return sel.FormatSpec
+        elif hasattr(sel, "Text"):
+            # Looks like a Balloon type feature
+            return sel.Text
+
+        return _defaultformat
 
     def preview(self):
         self.previewlabel.setText(self.formatspec.text() % (self.previewnumber))

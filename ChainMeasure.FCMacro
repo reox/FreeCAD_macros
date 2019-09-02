@@ -1,0 +1,50 @@
+"""
+This macro creates chain measurements, as it aligns all distances to the same coordinate
+
+The first Dimension selected will be the reference.
+
+All Y distances will be aligned by their X coordinate,
+all X distances will be aligned by their Y coordinate.
+
+Other distance measures do not work.
+"""
+from PySide.QtGui import QMessageBox
+from PySide import QtCore
+
+
+def msg(title, message):
+    diag = QMessageBox(QMessageBox.Warning, title, message)
+    diag.setWindowModality(QtCore.Qt.ApplicationModal)
+    diag.exec_()
+
+
+def main():
+    sel = FreeCADGui.Selection.getSelection()
+
+    if len(sel) < 2:
+        # Do nothing
+        return
+
+    if not all(map(lambda x: x.isDerivedFrom("TechDraw::DrawViewDimension"), sel)):
+        msg("Error", "You need to only select DrawViewDimensions!")
+        return
+
+    reference = next(iter(sel))
+
+    if reference.Type not in ("DistanceX", "DistanceY"):
+        msg("Error", "The dimension must be DimensionX or DimensionY!")
+        return
+
+    if not all(map(lambda x: x.Type == reference.Type, sel)):
+        msg("Error", "All dimensions must have the same type as the first selected")
+        return
+
+    for s in sel[1:]:
+        if reference.Type == "DistanceY":
+            s.X = reference.X
+        else:
+            s.Y = reference.Y
+
+
+if __name__ == "__main__":
+    main()
