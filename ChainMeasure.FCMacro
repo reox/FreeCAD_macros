@@ -18,6 +18,20 @@ def msg(title, message):
     diag.exec_()
 
 
+def center_coord(dim):
+    """
+    Returns the center of the dimension.
+    For DimensionY, the Y coordinate is returned,
+    for DimensionX the X coordinate.
+    """
+    a, b = dim.getLinearPoints()
+    c = (a + b) / 2.0
+    if dim.Type == 'DistanceY':
+        # need to transform the coordinate system on y only
+        return -c.y
+    return c.x
+
+
 def main():
     sel = FreeCADGui.Selection.getSelection()
 
@@ -39,11 +53,13 @@ def main():
         msg("Error", "All dimensions must have the same type as the first selected")
         return
 
-    for s in sel[1:]:
+    for s in sel:
         if reference.Type == "DistanceY":
             s.X = reference.X
+            s.Y = center_coord(s)
         else:
             s.Y = reference.Y
+            s.X = center_coord(s)
 
 
 if __name__ == "__main__":
