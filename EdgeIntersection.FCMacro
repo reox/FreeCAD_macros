@@ -65,11 +65,6 @@ def find_intersection():
     (p, q), (r, s) = list(map(lambda i: (i[0].Point, i[1].Point), map(lambda a:
         cur_view.getEdgeByIndex(a).Vertexes, indices)))
 
-    print("p", p)
-    print("q", q)
-    print("r", r)
-    print("s", s)
-
     # Want to solve: p + t(q - p) = r + v(s - r)
     # t and v are costants, p,q,r,s are vectors
     a = np.array([[q.x - p.x, -s.x + r.x], [q.y - p.y, -s.y + r.y]])
@@ -83,8 +78,8 @@ def find_intersection():
         x = p.x + t * (q.x - p.x)
         y = r.y + v * (s.y - r.y)
         # Convert coordinates back to view coordinates
-        res = FreeCAD.Vector(x, -y, 0)
-        print("intersection", res)
+        # The resulting vector must be converted into UI coordinates
+        res = FreeCAD.Vector(x, -y, 0) / cur_view.Scale
 
         # Add the Vertex
         cur_view.makeCosmeticVertex(res)
