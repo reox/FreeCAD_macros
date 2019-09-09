@@ -40,20 +40,6 @@ def msg(title, message):
     diag.exec_()
 
 
-def center_coord(dim):
-    """
-    Returns the center of the dimension.
-    For DimensionY, the Y coordinate is returned,
-    for DimensionX the X coordinate.
-    """
-    a, b = dim.getLinearPoints()
-    c = (a + b) / 2.0
-    if dim.Type == 'DistanceY':
-        # need to transform the coordinate system on y only
-        return -c.y
-    return c.x
-
-
 def is_above(a, b, p):
     """Checks if Point p is above the line a-b"""
     # TODO: actually the check should be p.y > ...
@@ -66,8 +52,10 @@ def is_above(a, b, p):
 
 
 def get_dim_vec(point):
-    """Returns the middle of the dimension, the normal vector and the length to
-    the dimension. Only work with Type==Distance"""
+    """
+    Returns the middle of the dimension, the normal vector and the length to
+    the dimension.
+    """
     a, b = point.getLinearPoints()
     # get the center vector of the line in question
     m = (a + b) / 2.0
@@ -87,12 +75,12 @@ def get_dim_vec(point):
             l = a - b
         else:
             l = b - a
-    if l.x == 0:
+    if l.x == 0 or point.Type == 'DistanceY':
         # This is rather a DistanceY
         if D.x < m.x:
             return m, FreeCAD.Vector(-1, 0, 0), m.x - D.x
         return m, FreeCAD.Vector(1, 0, 0), D.x - m.x
-    if l.y == 0:
+    if l.y == 0 or point.Type == 'DistanceX':
         # This is rather a DistanceX
         if D.y < m.y:
             return m, FreeCAD.Vector(0, -1, 0), m.y - D.y
@@ -134,7 +122,7 @@ def main():
     reference = next(iter(sel))
 
     if reference.Type not in ("DistanceX", "DistanceY", "Distance"):
-        msg("Error", "The dimension must be DimensionX or DimensionY!")
+        msg("Error", "The dimension must be DistanceX, DistanceY or Distance!")
         return
 
     if not all(map(lambda x: x.Type == reference.Type, sel)):
@@ -156,15 +144,17 @@ def main():
         ref_v = None
 
     for s in sel:
-        if reference.Type == "DistanceY":
+        m, cur_v, _ = get_dim_vec(s)
+        # Need to check if special cases, where Type==Distance is used for
+        # horizontal or vertical lines
+        if reference.Type == "DistanceY" or math.fabs(cur_v.x) == 1:
             s.X = reference.X
-            s.Y = center_coord(s)
-        elif reference.Type == "DistanceX":
+            s.Y = -m.y
+        elif reference.Type == "DistanceX" or math.fabs(cur_v.y) == 1:
             s.Y = reference.Y
-            s.X = center_coord(s)
+            s.X = m.x
         elif reference.Type == "Distance":
             # For each line, must calculate the center and normal
-            m, _, _ = get_dim_vec(s)
             s.X = m.x + v.x
             s.Y = -(m.y + v.y)
 
