@@ -34,3 +34,26 @@ before.
 
 Select at least one dimension line which shall be aligned.
 Only DistanceX and DistanceY are supported.
+
+
+## EdgeIntersection.FCMacro
+
+This macro is intended to be used in the TechDraw Workbench.
+
+Select two Edges of a DrawViewPart to compute the intersection point.
+A cosmetic vertex is created at the point of intersection.
+
+You will get an error message if:
+
+* a different number than two edges is selected
+* the lines are parallel
+
+
+# Licence
+
+All my macros are released under MIT Licence.
+
+
+Work based on other projects:
+
+* `EdgeIntersection.svg`: Based on [techdraw-2linecenterline.svg](https://github.com/FreeCAD/FreeCAD/blob/941968b37cd45505a5668a1df17ba9b8d6f9a66b/src/Mod/TechDraw/Gui/Resources/icons/actions/techdraw-2linecenterline.svg)
