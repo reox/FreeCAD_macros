@@ -143,7 +143,6 @@ def main():
 
     if reference.Type == "Distance":
         _, ref_v, ref_length = get_dim_vec(reference)
-        print(ref_v, ref_length)
         # Make sure, all dimensions point into the same direction
         for s in sel:
             _, check_v, _ = get_dim_vec(s)
