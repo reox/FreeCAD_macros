@@ -3,12 +3,10 @@ This macro creates chain measurements, as it aligns all distances to the same co
 It also re-centers the distance value.
 If only a single distance measure is given, it will only be re-centered.
 
-The first Dimension selected will be the reference.
+The first dimension selected will be the reference.
+All other dimension must be of the same type!
+The dimensions must be for parallel edges, otherwise the macro wont work.
 
-All Y distances will be aligned by their X coordinate,
-all X distances will be aligned by their Y coordinate.
-
-Other distance measures do not work.
 
 
 Copyright (c) 2019, Sebastian Bachmann <hello@reox.at>
@@ -30,6 +28,7 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
+import math
 
 from PySide.QtGui import QMessageBox
 from PySide import QtCore
@@ -55,6 +54,72 @@ def center_coord(dim):
     return c.x
 
 
+def is_above(a, b, p):
+    """Checks if Point p is above the line a-b"""
+    # TODO: actually the check should be p.y > ...
+    # but it only works this way?!
+    if (b.x - a.x) == 0:
+        return p.x < a.x
+    if p.y < (((b.y - a.y) / (b.x - a.x) * (p.x - a.x)) + a.y):
+        return True
+    return False
+
+
+def get_dim_vec(point):
+    """Returns the middle of the dimension, the normal vector and the length to
+    the dimension. Only work with Type==Distance"""
+    a, b = point.getLinearPoints()
+    # get the center vector of the line in question
+    m = (a + b) / 2.0
+
+    # Get the current location of the dimension as a vector
+    # NOTE: has to be converted from GUI coordinates
+    D = FreeCAD.Vector(point.X, -point.Y, 0)
+
+    # get the line as a vector
+    # We want that a is the vector left from b
+    # As the sorting in the list might be different, we need to check that.
+    if a.x < b.x:
+        l = a - b
+    else:
+        if a.y < b.y:
+            # There might be the case that the line is straight up or down
+            l = a - b
+        else:
+            l = b - a
+    if l.x == 0:
+        # This is rather a DistanceY
+        if D.x < m.x:
+            return m, FreeCAD.Vector(-1, 0, 0), m.x - D.x
+        return m, FreeCAD.Vector(1, 0, 0), D.x - m.x
+    if l.y == 0:
+        # This is rather a DistanceX
+        if D.y < m.y:
+            return m, FreeCAD.Vector(0, -1, 0), m.y - D.y
+        return m, FreeCAD.Vector(0, 1, 0), D.y - m.y
+
+    # If not special lines get orthogonal vector on l
+    v = FreeCAD.Vector(l.x ** -1, -(l.y ** -1), 0)
+    v.normalize()  # Normalize as l might be any orthogonal vector
+
+    # We need to know if the dimension line is above or beyond the edge
+    if is_above(a, b, D):
+        v = -v
+
+    # Now, we calculate the vector between the center Point and the current
+    # location of the dimension
+    x = m - D
+    length = x.Length
+
+    # We need the angle between the vectors to calculate the distance
+    x.normalize()
+    # The actual length of v is now the cos(alpha) times |x|
+    length = math.fabs(x.dot(v)) * length
+    # This length times v gives the new point for the dimension
+
+    return m, v, length
+
+
 def main():
     sel = FreeCADGui.Selection.getSelection()
 
@@ -68,7 +133,7 @@ def main():
 
     reference = next(iter(sel))
 
-    if reference.Type not in ("DistanceX", "DistanceY"):
+    if reference.Type not in ("DistanceX", "DistanceY", "Distance"):
         msg("Error", "The dimension must be DimensionX or DimensionY!")
         return
 
@@ -76,13 +141,33 @@ def main():
         msg("Error", "All dimensions must have the same type as the first selected")
         return
 
+    if reference.Type == "Distance":
+        _, ref_v, ref_length = get_dim_vec(reference)
+        print(ref_v, ref_length)
+        # Make sure, all dimensions point into the same direction
+        for s in sel:
+            _, check_v, _ = get_dim_vec(s)
+            if ref_v != check_v:
+                if ref_v != -check_v:
+                    msg("Error", "{} point into different directions!".format(s.Name))
+                    return
+        v = ref_v * ref_length
+    else:
+        ref_length = 0
+        ref_v = None
+
     for s in sel:
         if reference.Type == "DistanceY":
             s.X = reference.X
             s.Y = center_coord(s)
-        else:
+        elif reference.Type == "DistanceX":
             s.Y = reference.Y
             s.X = center_coord(s)
+        elif reference.Type == "Distance":
+            # For each line, must calculate the center and normal
+            m, _, _ = get_dim_vec(s)
+            s.X = m.x + v.x
+            s.Y = -(m.y + v.y)
 
 
 if __name__ == "__main__":
