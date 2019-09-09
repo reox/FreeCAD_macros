@@ -25,3 +25,12 @@ over `f` as it removes trailing zeros from the string. One disadvantage is, that
 you can only specify the total number of decimal places and that it will switch
 to exponential format if the value is too large.
 
+
+## ChainMeasure.FCMacro
+
+With this macro you can properly align dimensions to be used as chain measures.
+It also aligns the dimension value to the center of the line, if it was moved
+before.
+
+Select at least one dimension line which shall be aligned.
+Only DistanceX and DistanceY are supported.
