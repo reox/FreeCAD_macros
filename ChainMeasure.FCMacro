@@ -155,6 +155,9 @@ def main():
             s.X = m.x
         elif reference.Type == "Distance":
             # For each line, must calculate the center and normal
+            # FIXME: Actually this is not sufficent! We must calculate the
+            # distance from m to the ref_m and add this to m+v!
+            # Otherwise it will only work if the edges are co-linear.
             s.X = m.x + v.x
             s.Y = -(m.y + v.y)
 
