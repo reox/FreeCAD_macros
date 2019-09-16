@@ -125,8 +125,8 @@ def get_dim_vec(point):
 def main():
     sel = FreeCADGui.Selection.getSelection()
 
-    if len(sel) == 0:
-        # Do nothing
+    if not sel:
+        # Do nothing, empty selection
         return
 
     if not all(map(lambda x: x.isDerivedFrom("TechDraw::DrawViewDimension"), sel)):
@@ -146,6 +146,8 @@ def main():
     if reference.Type == "Distance":
         ref_m, ref_v, ref_length = get_dim_vec(reference)
         # Make sure, all dimensions point into the same direction
+        # Some dimensions might be under the line, hence their vector is
+        # negative the reference
         for s in sel:
             _, check_v, _ = get_dim_vec(s)
             # TODO: check if 0.000001 is a reasonable number; time will tell
