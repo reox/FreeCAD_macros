@@ -6,28 +6,43 @@ If only a single distance measure is given, it will only be re-centered.
 The first dimension selected will be the reference.
 All other dimension must be of the same type!
 The dimensions must be for parallel edges, otherwise the macro wont work.
-
-
-
-Copyright (c) 2019, Sebastian Bachmann <hello@reox.at>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
+
+__Name__ = 'TDChainDistances'
+__Comment__ = 'Create Chain Distances in TechDraw'
+__Author__ = 'Sebastian Bachmann'
+__Version__ = '1.0'
+__Date__ = '2019-09-16'
+__License__ = 'MIT'
+__Web__ = 'https://github.com/reox/FreeCAD_Macros'
+__Wiki__ = ''
+__Icon__ = 'TDChainDistances.svg'
+__Help__ = 'Select any number of distances and use the macro. ' \
+           'The distances must be parallel. ' \
+           'The first distance is taken as reference.'
+__Status__ = 'Stable'
+__Requires__ = '>=0.19.18234; py3 only'
+__Communication__ = 'https://github.com/reox/FreeCAD_Macros/issues'
+
+# Copyright (c) 2019, Sebastian Bachmann <hello@reox.at>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 import math
 
 from PySide.QtGui import QMessageBox
@@ -42,11 +57,10 @@ def msg(title, message):
 
 def is_above(a, b, p):
     """Checks if Point p is above the line a-b"""
-    # TODO: actually the check should be p.y > ...
-    # but it only works this way?!
+    # Extra check for division by zero -> vertical line
     if (b.x - a.x) == 0:
         return p.x < a.x
-    if p.y < (((b.y - a.y) / (b.x - a.x) * (p.x - a.x)) + a.y):
+    if p.y > (((b.y - a.y) / (b.x - a.x) * (p.x - a.x)) + a.y):
         return True
     return False
 
@@ -86,7 +100,7 @@ def get_dim_vec(point):
             return m, FreeCAD.Vector(0, -1, 0), m.y - D.y
         return m, FreeCAD.Vector(0, 1, 0), D.y - m.y
 
-    # If not special lines get orthogonal vector on l
+    # If not horizontal or vertical lines; get orthogonal vector on l
     v = FreeCAD.Vector(l.x ** -1, -(l.y ** -1), 0)
     v.normalize()  # Normalize as l might be any orthogonal vector
 
@@ -130,18 +144,19 @@ def main():
         return
 
     if reference.Type == "Distance":
-        _, ref_v, ref_length = get_dim_vec(reference)
+        ref_m, ref_v, ref_length = get_dim_vec(reference)
         # Make sure, all dimensions point into the same direction
         for s in sel:
             _, check_v, _ = get_dim_vec(s)
-            if ref_v != check_v:
-                if ref_v != -check_v:
+            # TODO: check if 0.000001 is a reasonable number; time will tell
+            if not ref_v.isEqual(check_v, 0.000001):
+                if not ref_v.isEqual(-check_v, 0.000001):
                     msg("Error", "{} point into different directions!".format(s.Name))
                     return
-        v = ref_v * ref_length
     else:
         ref_length = 0
         ref_v = None
+
 
     for s in sel:
         m, cur_v, _ = get_dim_vec(s)
@@ -155,9 +170,12 @@ def main():
             s.X = m.x
         elif reference.Type == "Distance":
             # For each line, must calculate the center and normal
-            # FIXME: Actually this is not sufficent! We must calculate the
-            # distance from m to the ref_m and add this to m+v!
-            # Otherwise it will only work if the edges are co-linear.
+            # But the lines might be anywhere, hence we need to calculate the
+            # distance in direction of the normal vector between the reference
+            # and the current one.
+            x = m - ref_m
+            v = ref_v * (ref_length - (math.cos(x.getAngle(cur_v)) * x.Length))
+
             s.X = m.x + v.x
             s.Y = -(m.y + v.y)
 

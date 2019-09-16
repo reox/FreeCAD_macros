@@ -26,7 +26,7 @@ you can only specify the total number of decimal places and that it will switch
 to exponential format if the value is too large.
 
 
-## ChainMeasure.FCMacro
+## TDChainDistances.FCMacro
 
 With this macro you can properly align dimensions to be used as chain measures.
 It also aligns the dimension value to the center of the line, if it was moved
@@ -57,3 +57,4 @@ All my macros are released under MIT Licence.
 Work based on other projects:
 
 * `EdgeIntersection.svg`: Based on [techdraw-2linecenterline.svg](https://github.com/FreeCAD/FreeCAD/blob/941968b37cd45505a5668a1df17ba9b8d6f9a66b/src/Mod/TechDraw/Gui/Resources/icons/actions/techdraw-2linecenterline.svg)
+* `TDChainDistances.svg`: Based on [techdraw_dimension_horizontal.svg](https://github.com/FreeCAD/FreeCAD/blob/291bad6cba925cb2a69033ce0d9f748814348398/src/Mod/TechDraw/Gui/Resources/icons/TechDraw_Dimension_Horizontal.svg)
