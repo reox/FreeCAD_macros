@@ -1,0 +1,127 @@
+"""
+This macro is inteneded to be used in the Sketcher Workbench.
+
+The idea is to place down some points, which are the center points of the Voronoi cells.
+The macro will compute the convex hull of the points, a Voronoi tesselation
+and additionally offset all Voronoi cells in such a way, that they can be used
+as pockets.
+
+An additional switch exists to draw the convex hull as line segments too, which
+can be used to create a extrudeable sketch.
+
+Edit the settings in the main() function for the creation of the Voronoi tesselation
+and run the macro inside an active sketch.
+
+Copyright (c) 2019, Sebastian Bachmann <hello@reox.at>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+import Part
+import numpy as np
+from scipy.spatial import Voronoi, Delaunay, ConvexHull
+
+
+def fill_voronoi_offset(sketch, points, offset=1, draw_convex_hull=True):
+    """
+    Create Voronoi cells from a list of points given by XY coordinates
+    Z will always be set to zero.
+
+    :param Sketcher.SketchObject sketch: The sketch object to place the cells into
+    :param List[Tuple[float]] points: A list of 2D points to form the centers of the cells
+    :param float offset: the offset in Units to offset all lines. Positive offsets make the cells smaller
+    :param boolean draw_convex_hull: Draw the convex hull as line segments too
+    """
+    v = Voronoi(points)
+
+    ch = ConvexHull(points)
+    # Convex Hull polygon as a face for intersection
+    ch_points = ch.points[ch.vertices]
+    convex_hull = Part.makeFace(Part.makePolygon([App.Vector(*x, 0) for x in ch_points] + [App.Vector(*ch_points[0], 0)]), 'Part::FaceMakerSimple')
+
+    # Draw the convex hull as outline
+    if draw_convex_hull:
+        for a, b in ch.simplices:
+            p1 = App.Vector(*ch.points[a], 0)
+            p2 = App.Vector(*ch.points[b], 0)
+            sketch.addGeometry(Part.LineSegment(p1, p2))
+
+    for r in v.regions:
+        if -1 in r or r == []:
+            continue
+
+        # Make a wire and calculate the offset
+        wire = Part.makePolygon([App.Vector(*v.vertices[x], 0) for x in r] + [App.Vector(*v.vertices[r[0]], 0)])
+        face = Part.makeFace(wire, 'Part::FaceMakerSimple')
+
+        section = face.common(convex_hull)
+        assert len(section.Wires) == 1, 'There is a different number of wires than 1'
+        new_wire = section.Wires[0]
+        try:
+            newshape = new_wire.makeOffset2D(-offset, openResult=False, intersection=True)
+        except:
+            print("Shape was probly too small... ignoring")
+        else:
+            for e in newshape.Edges:
+                a, b = e.Vertexes
+                sketch.addGeometry(Part.LineSegment(a.Point, b.Point))
+
+    App.ActiveDocument.recompute()
+
+
+def fill_delaunay(sketch, points):
+    d = Delaunay(points)
+
+    drawn = set()
+
+    for a, b, c in d.simplices:
+        p1 = App.Vector(*points[a], 0)
+        p2 = App.Vector(*points[b], 0)
+        p3 = App.Vector(*points[c], 0)
+        if (a, b) not in drawn and (b, a) not in drawn:
+            sketch.addGeometry(Part.LineSegment(p1, p2))
+            drawn.add((a, b))
+        if (b, c) not in drawn and (c, b) not in drawn:
+            sketch.addGeometry(Part.LineSegment(p2, p3))
+            drawn.add((b, c))
+        if (a, c) not in drawn and (c, a) not in drawn:
+            sketch.addGeometry(Part.LineSegment(p1, p3))
+            drawn.add((a, c))
+    App.ActiveDocument.recompute()
+
+
+def main():
+    view_provider = Gui.activeDocument().getInEdit()
+
+    if not view_provider:
+        return
+    sketch = view_provider.Object
+    if sketch.TypeId != 'Sketcher::SketchObject':
+        return
+
+    geo = sketch.Geometry
+
+    points = []
+    for item in geo:
+        if isinstance(item, Part.Point):
+            points.append((item.X, item.Y))
+
+    # TODO Ask in userinterface...
+    fill_voronoi_offset(sketch, points, 0.3, False)
+
+
+if __name__ == "__main__":
+    main()
