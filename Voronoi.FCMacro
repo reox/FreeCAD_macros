@@ -122,6 +122,19 @@ def main():
     # TODO Ask in userinterface...
     fill_voronoi_offset(sketch, points, 0.3, False)
 
+    # TODO: Add a mode where the convex hull is drawn, either by a polygon or
+    # whatever. then it is filled with a distribution of points and from them
+    # the voronoi pattern is calculated.
+    # One interesting aspect is the filling of a polygon with random points.
+    # However, the problem gets easy, if the polygon is converted into
+    # triangles (using for example Delaunay) and then each triangle is filled
+    # with points using the method described in http://mathworld.wolfram.com/TrianglePointPicking.html
+    # For a uniform distribution, the area of the triangles has to be taken
+    # into account, which should also be no problem.
+    # But we can also create other interesting point distributions from that,
+    # for example patterns etc...
+
+
 
 if __name__ == "__main__":
     main()
