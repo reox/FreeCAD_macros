@@ -49,7 +49,17 @@ import numpy as np
 from numpy.linalg import det, norm
 from scipy.spatial import Voronoi, Delaunay, ConvexHull
 
-from PySide.QtGui import QMessageBox
+from PySide.QtGui import (
+        QMainWindow,
+        QDialog,
+        QLineEdit,
+        QPushButton,
+        QGridLayout,
+        QLabel,
+        QGroupBox,
+        QSpacerItem,
+        QMessageBox,
+        )
 from PySide import QtCore
 
 
@@ -59,9 +69,16 @@ def msg(title, message):
     diag.exec_()
 
 
-def v(a, b):
-    """An easy numpy 2D Vector"""
-    return np.array([a, b])
+def sum_conserving_round(inp):
+    """
+    Round a list but conserve the overall sum
+    by minimizing the roundoff error
+    """
+    frac, res = np.modf(inp)
+    items = np.argsort(frac)[::-1]
+    for i in range(int(round(np.sum(inp) - np.sum(res)))):
+        res[items[i]] += 1.0
+    return res
 
 
 def triangle_area(v0, v1, v2):
@@ -125,10 +142,15 @@ def fill_triangle(v0, v1, v2, n=100):
     return x.T
 
 
-def fill_voronoi_offset(sketch, points, origin_face, offset=1):
+def fill_voronoi_offset(sketch, points, origin_face, offset):
     """
     Create Voronoi cells from a list of points given by XY coordinates
     Z will always be set to zero.
+    These are sketch coordinates!
+
+    .. todo::
+        The method seems to miss out some points, which means that the surface might not completely
+        filled with voronoi regions.
 
     :param Sketcher.SketchObject sketch: The sketch object to place the cells into
     :param List[Tuple[float]] points: A list of 2D points to form the centers of the cells
@@ -137,8 +159,16 @@ def fill_voronoi_offset(sketch, points, origin_face, offset=1):
     """
     v = Voronoi(points)
 
+    # Debug: show all points
+    #for p in points:
+    #    sketch.addGeometry(Part.Point(App.Vector(*p, 0)))
+
     for r in v.regions:
-        if -1 in r or r == []:
+        # Simply remove points which are outside of the face...
+        while -1 in r:
+            r.remove(-1)
+
+        if r == []:
             continue
 
         # Make a wire and calculate the offset
@@ -146,7 +176,8 @@ def fill_voronoi_offset(sketch, points, origin_face, offset=1):
         face = Part.makeFace(wire, 'Part::FaceMakerSimple')
 
         section = face.common(origin_face)
-        # If the face has holes, there might be a different number of wires...
+        # If the face has holes, there might be a different number of wires
+        # than one...
         for new_wire in section.Wires:
             try:
                 newshape = new_wire.makeOffset2D(-offset, openResult=False, intersection=True)
@@ -157,34 +188,109 @@ def fill_voronoi_offset(sketch, points, origin_face, offset=1):
                     a, b = e.Vertexes
                     sketch.addGeometry(Part.LineSegment(a.Point, b.Point))
 
-    App.ActiveDocument.recompute()
+
+class VoronoiForm(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle('Voronoi Pattern on Face')
+
+        layout = QGridLayout()
+
+        layout.addWidget(QLabel('Points:', self), 0, 0)
+        layout.addWidget(QLabel('Offset:', self), 1, 0)
+        layout.addWidget(QLabel('Tessellation Tol:', self), 2, 0)
+        layout.addWidget(QLabel('Seed:', self), 3, 0)
+
+        newseed = QPushButton("Random")
+        newseed.clicked.connect(self.setnewseed)
+        layout.addWidget(newseed, 3, 2)
+
+        self.points = QLineEdit('100')
+        self.offset = QLineEdit('0.3')
+        self.tol = QLineEdit('0.1')
+        self.seed = QLineEdit('1337')
+
+        layout.addWidget(self.points, 0, 1)
+        layout.addWidget(self.offset, 1, 1)
+        layout.addWidget(self.tol, 2, 1)
+        layout.addWidget(self.seed, 3, 1)
+
+        ok = QPushButton("OK")
+        ok.clicked.connect(self.do)
+        abort = QPushButton("Abort")
+        abort.clicked.connect(self.exit)
+
+        layout.addWidget(ok, 4, 0)
+        layout.addWidget(abort, 4, 1)
+
+        self.setLayout(layout)
+
+        self.show()
+
+    def setnewseed(self):
+        self.seed.setText(str(np.random.randint(0, 2**32)))
+
+    @staticmethod
+    def get_field_as(field, fun):
+        err = False
+        n = None
+        try:
+            n = fun(field.text())
+        except ValueError:
+            msg('Error', 'Invalid Value "{}", must be of type {}!'.format(field.text(), fun))
+            err = True
+        return n, err
+
+    def do(self):
+        err = False
+        n, e1 = self.get_field_as(self.points, int)
+        err |= e1
+        offset, e1 = self.get_field_as(self.offset, float)
+        err |= e1
+        tol, e1 = self.get_field_as(self.tol, float)
+        err |= e1
+        seed, e1 = self.get_field_as(self.seed, int)
+
+        if not err:
+            np.random.seed(seed)
+            voronoi_on_face(n, offset, tol)
+            self.close()
+
+    def exit(self, event):
+        self.close()
 
 
-def fill_delaunay(sketch, points):
-    d = Delaunay(points)
+def voronoi_on_face(n, offset, tol):
+    """
+    Create a Voronoi Pattern on a Face by creating random points.
 
-    drawn = set()
+    A sketch is created which contains the Voronoi cell geometry.
 
-    for a, b, c in d.simplices:
-        p1 = App.Vector(*points[a], 0)
-        p2 = App.Vector(*points[b], 0)
-        p3 = App.Vector(*points[c], 0)
-        if (a, b) not in drawn and (b, a) not in drawn:
-            sketch.addGeometry(Part.LineSegment(p1, p2))
-            drawn.add((a, b))
-        if (b, c) not in drawn and (c, b) not in drawn:
-            sketch.addGeometry(Part.LineSegment(p2, p3))
-            drawn.add((b, c))
-        if (a, c) not in drawn and (c, a) not in drawn:
-            sketch.addGeometry(Part.LineSegment(p1, p3))
-            drawn.add((a, c))
+    The face is tessellated first, then the triangles are filled with random points
+    choosen from an uniform distribution.
+    Afterwards, each Voronoi Cell is offsetted in such a way, that ridges form between
+    the cells. The width of each ridge is offset/2.
 
+    Note, that the tessellation of the face might produce unwanted artefacts!
+    Voronoi cells might intersect with features (holes) of the face.
+    This can be explained by the tessellation: Consider a perfect circle, which is then
+    tessellated. Now a finite number of triangles will be used, and the form
+    of the circle will be approximated with a n-gon.
+    During the calculation these n-gons are used! As the edges of the n-gon
+    are always inside the circle, some Voronoi cells might intersect the circle.
 
-def main():
-    # TODO get these parameters via a GUI
-    n = 100  # Number of points
-    offset = 0.3  # Offset in mm
+    The face will in most cases also not filled completely with cells.
+    The choise of points influences the end result. Unfortunately, I'm not entirely sure
+    how to control the cells in such a way that cells are created on all the face.
 
+    Right now, there is also no way to control the minimum size of each cell.
+    One method might be to distribute the points more evenly - which also depends
+    on the tessellation!
+
+    :param int n: Number of points to generate
+    :param float offset: Offset for voronoi cells, larger than 0
+    :param float tol: Tessellation tolerance
+    """
     sel = Gui.Selection.getSelectionEx()
 
     if len(sel) != 1:
@@ -197,9 +303,9 @@ def main():
         return
 
     face = so[0]
+    print(face.Wires)
 
-    # TODO what is the argument to tessellate?
-    poly_points, simplices = face.tessellate(1)
+    poly_points, simplices = face.tessellate(tol)
     # We need lists instead if tuples for numpy to be able to return items from
     # an array
     simplices = [list(x) for x in simplices]
@@ -220,34 +326,32 @@ def main():
     sketch.Support = (feature, face_name)
 
     # We need the placement to calculate the points in the sketch...
+    # This transform will convert all points on the surface into 2D sketch
+    # coordinates
     transform = sketch.Placement.toMatrix().inverse()
 
-    # Transform the points into the sketch's coordinate system
-    poly_points_sketch = [transform * p for p in poly_points]
+    # NOTE: The transformation should always make the point have zero at the z
+    # coordinate. However, sometimes the z coordinate is <<1 but not 0.
+    # But we are confident that this should work for all faces ;)
+    poly = np.array([[p.x, p.y] for p in [transform * p for p in poly_points]])
 
-    # TODO need to check if all the coordinates are really 2D coordinates now!
-    # We must check in which plane the sketch is created!
-    # Right now, it only works in XY plane
-    assert all([p.z == 0.0 for p in poly_points_sketch]), 'z coordinate is nonzero'
-    poly = np.array([[p.x, p.y] for p in poly_points_sketch])
-
-    # TODO need sum conserving rounding here!
-    n_points = np.round(np.array([triangle_area(*poly[s]) / total_area * n for s in simplices])).astype(np.uint)
+    n_points = sum_conserving_round(np.array([triangle_area(*poly[s]) / total_area * n for s in simplices])).astype(np.uint)
+    if np.sum(n_points) != n:
+        msg('Warning', 'Point numbers do not match after distribution step!')
 
     points = np.empty((2, 0))
     for i, s in enumerate(simplices):
+        # If the tesselation produces too small triangles, they might not get
+        # filled with points
+        if n_points[i] == 0:
+            continue
         points = np.hstack((points, fill_triangle(*poly[s], n=n_points[i])))
     points = points.T
 
-    #for p in points:
-    #    sketch.addGeometry(Part.Point(App.Vector(*p, 0)))
-
-    hull = face.transformed(transform)
-
-    fill_voronoi_offset(sketch, points, hull, offset)
+    fill_voronoi_offset(sketch, points, face.transformed(transform), offset)
 
     App.ActiveDocument.recompute()
 
 
 if __name__ == "__main__":
-    main()
+    form = VoronoiForm()
