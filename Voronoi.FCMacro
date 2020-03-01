@@ -11,7 +11,21 @@ can be used to create a extrudeable sketch.
 
 Edit the settings in the main() function for the creation of the Voronoi tesselation
 and run the macro inside an active sketch.
-
+"""
+__Name__ = 'PDVoronoiFace'
+__Comment__ = 'Create Voronoi Pattern on Face'
+__Author__ = 'Sebastian Bachmann'
+__Version__ = '0.0.1'
+__Date__ = '2020-02-28'
+__License__ = 'MIT'
+__Web__ = 'https://github.com/reox/FreeCAD_Macros'
+__Wiki__ = ''
+__Icon__ = 'PDVoronoi.svg'
+__Help__ = 'Select a face'
+__Status__ = 'Beta'
+__Requires__ = '>=0.19.18234; py3 only'
+__Communication__ = 'https://github.com/reox/FreeCAD_Macros/issues'
+"""
 Copyright (c) 2019, Sebastian Bachmann <hello@reox.at>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -32,32 +46,96 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import Part
 import numpy as np
+from numpy.linalg import det, norm
 from scipy.spatial import Voronoi, Delaunay, ConvexHull
 
+from PySide.QtGui import QMessageBox
+from PySide import QtCore
 
-def fill_voronoi_offset(sketch, points, offset=1, draw_convex_hull=True):
+
+def msg(title, message):
+    diag = QMessageBox(QMessageBox.Warning, title, message)
+    diag.setWindowModality(QtCore.Qt.ApplicationModal)
+    diag.exec_()
+
+
+def v(a, b):
+    """An easy numpy 2D Vector"""
+    return np.array([a, b])
+
+
+def triangle_area(v0, v1, v2):
+    """
+    Returns the surface area of a triangle with given points
+
+    :param np.array v0: point 1
+    :param np.array v1: point 2
+    :param np.array v2: point 3
+    """
+    return norm(np.cross(v1 - v0, v2 - v0)) * 0.5
+
+
+def Det(u, v):
+    """
+    Calculate the determinate of two vectors concatenated to matrix
+    """
+    return det(np.vstack((u, v)))
+
+
+def point_in_triangle(p, v0, v1, v2):
+    """
+    Checks if the point p is part of the triangle formed by v0, v1, v2
+    v0 is a point and v1 and v2 are vectors from v0 to the other two vertices
+
+    From http://mathworld.wolfram.com/TriangleInterior.html
+    """
+
+    a = (Det(p, v2) - Det(v0, v2)) / Det(v1, v2)
+    b = -(Det(p, v1) - Det(v0, v1)) / Det(v1, v2)
+
+    return a > 0 and b > 0 and (a + b) < 1
+
+
+def mirror_point_at_point(p, s):
+    """
+    Mirrors the point p at the point s
+    """
+    return p - 2*(p - s)
+
+
+def fill_triangle(v0, v1, v2, n=100):
+    """
+    Fills a triangle with points.
+    The points stem from a uniform distribution.
+
+    From: http://mathworld.wolfram.com/TrianglePointPicking.html
+    """
+    a1 = np.random.random(n)[:, np.newaxis]
+    a2 = np.random.random(n)[:, np.newaxis]
+
+    # symmetry point at the parallelogram's edge
+    s = v1 + ((v2 - v1) * 0.5)
+
+    # Get vectors from v0 to v1 and v2
+    v01 = (v1 - v0)
+    v02 = (v2 - v0)
+
+    x = v0 + a1 * v01 + a2 * v02
+    x = np.array([p if point_in_triangle(p, v0, v01, v02) else mirror_point_at_point(p, s) for p in x])
+    return x.T
+
+
+def fill_voronoi_offset(sketch, points, origin_face, offset=1):
     """
     Create Voronoi cells from a list of points given by XY coordinates
     Z will always be set to zero.
 
     :param Sketcher.SketchObject sketch: The sketch object to place the cells into
     :param List[Tuple[float]] points: A list of 2D points to form the centers of the cells
+    :param Part.Face origin_face: Originating face in sketch coordinates
     :param float offset: the offset in Units to offset all lines. Positive offsets make the cells smaller
-    :param boolean draw_convex_hull: Draw the convex hull as line segments too
     """
     v = Voronoi(points)
-
-    ch = ConvexHull(points)
-    # Convex Hull polygon as a face for intersection
-    ch_points = ch.points[ch.vertices]
-    convex_hull = Part.makeFace(Part.makePolygon([App.Vector(*x, 0) for x in ch_points] + [App.Vector(*ch_points[0], 0)]), 'Part::FaceMakerSimple')
-
-    # Draw the convex hull as outline
-    if draw_convex_hull:
-        for a, b in ch.simplices:
-            p1 = App.Vector(*ch.points[a], 0)
-            p2 = App.Vector(*ch.points[b], 0)
-            sketch.addGeometry(Part.LineSegment(p1, p2))
 
     for r in v.regions:
         if -1 in r or r == []:
@@ -67,17 +145,17 @@ def fill_voronoi_offset(sketch, points, offset=1, draw_convex_hull=True):
         wire = Part.makePolygon([App.Vector(*v.vertices[x], 0) for x in r] + [App.Vector(*v.vertices[r[0]], 0)])
         face = Part.makeFace(wire, 'Part::FaceMakerSimple')
 
-        section = face.common(convex_hull)
-        assert len(section.Wires) == 1, 'There is a different number of wires than 1'
-        new_wire = section.Wires[0]
-        try:
-            newshape = new_wire.makeOffset2D(-offset, openResult=False, intersection=True)
-        except:
-            print("Shape was probly too small... ignoring")
-        else:
-            for e in newshape.Edges:
-                a, b = e.Vertexes
-                sketch.addGeometry(Part.LineSegment(a.Point, b.Point))
+        section = face.common(origin_face)
+        # If the face has holes, there might be a different number of wires...
+        for new_wire in section.Wires:
+            try:
+                newshape = new_wire.makeOffset2D(-offset, openResult=False, intersection=True)
+            except:
+                print("Shape was probly too small... ignoring")
+            else:
+                for e in newshape.Edges:
+                    a, b = e.Vertexes
+                    sketch.addGeometry(Part.LineSegment(a.Point, b.Point))
 
     App.ActiveDocument.recompute()
 
@@ -100,40 +178,75 @@ def fill_delaunay(sketch, points):
         if (a, c) not in drawn and (c, a) not in drawn:
             sketch.addGeometry(Part.LineSegment(p1, p3))
             drawn.add((a, c))
-    App.ActiveDocument.recompute()
 
 
 def main():
-    view_provider = Gui.activeDocument().getInEdit()
+    # TODO get these parameters via a GUI
+    n = 100  # Number of points
+    offset = 0.3  # Offset in mm
 
-    if not view_provider:
+    sel = Gui.Selection.getSelectionEx()
+
+    if len(sel) != 1:
+        msg('Error', 'Please select a single face first!')
         return
-    sketch = view_provider.Object
-    if sketch.TypeId != 'Sketcher::SketchObject':
+
+    so = sel[0].SubObjects
+    if len(so) != 1:
+        msg('Error', 'Please select a single face first!')
         return
 
-    geo = sketch.Geometry
+    face = so[0]
 
-    points = []
-    for item in geo:
-        if isinstance(item, Part.Point):
-            points.append((item.X, item.Y))
+    # TODO what is the argument to tessellate?
+    poly_points, simplices = face.tessellate(1)
+    # We need lists instead if tuples for numpy to be able to return items from
+    # an array
+    simplices = [list(x) for x in simplices]
+    total_area = face.Area
 
-    # TODO Ask in userinterface...
-    fill_voronoi_offset(sketch, points, 0.3, False)
+    # Get the object which is selected
+    feature = Gui.Selection.getSelection()[0]
+    face_name = sel[0].SubElementNames[0]
 
-    # TODO: Add a mode where the convex hull is drawn, either by a polygon or
-    # whatever. then it is filled with a distribution of points and from them
-    # the voronoi pattern is calculated.
-    # One interesting aspect is the filling of a polygon with random points.
-    # However, the problem gets easy, if the polygon is converted into
-    # triangles (using for example Delaunay) and then each triangle is filled
-    # with points using the method described in http://mathworld.wolfram.com/TrianglePointPicking.html
-    # For a uniform distribution, the area of the triangles has to be taken
-    # into account, which should also be no problem.
-    # But we can also create other interesting point distributions from that,
-    # for example patterns etc...
+    body = Gui.ActiveDocument.ActiveView.getActiveObject('pdbody')
+    if body is None:
+        msg('Error', 'Need an active body!')
+        return
 
+    sketch = App.ActiveDocument.addObject('Sketcher::SketchObject', 'Vornoi_Sketch')
+    body.addObject(sketch)
+    sketch.MapMode = 'FlatFace'
+    sketch.Support = (feature, face_name)
+
+    # We need the placement to calculate the points in the sketch...
+    transform = sketch.Placement.toMatrix().inverse()
+
+    # Transform the points into the sketch's coordinate system
+    poly_points_sketch = [transform * p for p in poly_points]
+
+    # TODO need to check if all the coordinates are really 2D coordinates now!
+    # We must check in which plane the sketch is created!
+    # Right now, it only works in XY plane
+    assert all([p.z == 0.0 for p in poly_points_sketch]), 'z coordinate is nonzero'
+    poly = np.array([[p.x, p.y] for p in poly_points_sketch])
+
+    # TODO need sum conserving rounding here!
+    n_points = np.round(np.array([triangle_area(*poly[s]) / total_area * n for s in simplices])).astype(np.uint)
+
+    points = np.empty((2, 0))
+    for i, s in enumerate(simplices):
+        points = np.hstack((points, fill_triangle(*poly[s], n=n_points[i])))
+    points = points.T
+
+    #for p in points:
+    #    sketch.addGeometry(Part.Point(App.Vector(*p, 0)))
+
+    hull = face.transformed(transform)
+
+    fill_voronoi_offset(sketch, points, hull, offset)
+
+    App.ActiveDocument.recompute()
 
 
 if __name__ == "__main__":
