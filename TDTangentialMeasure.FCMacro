@@ -53,7 +53,7 @@ def find_tangential():
     elem = Gui.Selection.getSelectionEx()[0].SubElementNames
 
     if not all(map(lambda x: x.startswith('Edge'), elem)) or len(elem) != 3:
-        msg("Wrong Selection", "You have not selected two edges!")
+        msg("Wrong Selection", "You have not selected three edges!")
         return
 
     try:
