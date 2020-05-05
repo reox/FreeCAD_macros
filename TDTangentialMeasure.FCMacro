@@ -1,0 +1,125 @@
+"""
+This Macro is intended to be used in the TechDraw Workbench,
+to find the intersection point of two Edges inside a DrawViewPart.
+
+Select two Egdes and run the Macro. The cosmetic vertex will be created
+at the intersection point.
+
+
+Copyright (c) 2019, Sebastian Bachmann <hello@reox.at>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+
+
+import numpy as np
+from PySide.QtGui import QMessageBox
+from PySide import QtCore
+
+
+def msg(title, message):
+    diag = QMessageBox(QMessageBox.Warning, title, message)
+    diag.setWindowModality(QtCore.Qt.ApplicationModal)
+    diag.exec_()
+
+
+def find_tangential():
+    """
+    Finds the intersection point of two edges
+    And creates a cosmetic vertex there
+    """
+    # Get the current view:
+    cur_view = Gui.Selection.getSelectionEx()[0].Object
+
+
+    if not cur_view.isDerivedFrom("TechDraw::DrawViewPart"):
+        msg("Wrong Selection", "Must select Edges of DrawViewPart!")
+        return
+
+    # Get the names of the selected edges:
+    elem = Gui.Selection.getSelectionEx()[0].SubElementNames
+
+    if not all(map(lambda x: x.startswith('Edge'), elem)) or len(elem) != 3:
+        msg("Wrong Selection", "You have not selected two edges!")
+        return
+
+    try:
+        indices = map(lambda x: int(x.replace('Edge', '')), elem)
+    except ValueError as e:
+        msg("Something is wrong", "Can not parse Edge indices: {}".format(e))
+        return
+
+    # Edge -> Curve (Circle) -> Location + Radius
+    #      -> Curve (Line)   -> Direction
+
+    items = list(map(lambda a: cur_view.getEdgeByIndex(a), indices))
+    
+    points = []
+    directions = []
+    radii = []
+    dir = None    
+
+    for item in items:
+        if item.Curve.TypeId == 'Part::GeomCircle':
+            v1, v2 = item.Vertexes
+
+            print("curve")
+            print(v1.Point, v2.Point, item.Curve.Location, item.Curve.Radius)
+            # Calculate the "direction vector" of the circle
+            p = (item.Curve.Location - v1.Point) + (item.Curve.Location - v2.Point)
+            p.normalize()
+            points.append(item.Curve.Location)
+            directions.append(p)
+            radii.append(item.Curve.Radius)
+        elif item.Curve.TypeId == 'Part::GeomLine':
+            print("parallel edge:")
+            print(item.Curve.Direction)
+            dir = item.Curve.Direction
+        else:
+            print(item.Curve.TypeId)
+
+    p1, p2 = points
+    d1, d2 = directions
+    r1, r2 = radii
+
+    def dir_sign(v1, v2):
+        a = v1.getAngle(v2)
+        print(a)
+        if a < np.pi / 2.0 or a >= (3.0/2.0) * np.pi:
+            return -1
+        return 1
+
+    def conv(v):
+        return App.Vector(v.x, -v.y, v.z) / cur_view.Scale
+
+    #cur_view.makeCosmeticVertex(conv(p1))
+    #cur_view.makeCosmeticVertex(conv(p2))
+
+
+    vert1 = p1 + dir_sign(dir, d1) * dir * r1
+    vert2 = p2 + dir_sign(dir, d2) * dir * r2
+
+    cur_view.makeCosmeticVertex(conv(vert1))
+    cur_view.makeCosmeticVertex(conv(vert2))
+
+
+    # Recompute
+    App.activeDocument().recompute(None,True,True)
+
+
+if __name__ == "__main__":
+    find_tangential()
