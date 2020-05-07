@@ -6,6 +6,11 @@ Some macros are not written by me, but copied from other sources. Please inspect
 Most of my macros are designed to work with a Python3/QT5 build of FreeCAD!
 Please use a modern version like 0.18 which supports both!
 
+# Add the Macros to your toolbar:
+
+Follow the instructions in the FreeCAD wiki regaring [Toolbar Customization](https://wiki.freecadweb.org/Customize_Toolbars).
+Do not forget to add the `icons` folder in order to use the provided icons for
+the macros.
 
 ## CustomFormat.FCMacro
 
@@ -47,6 +52,18 @@ You will get an error message if:
 
 * a different number than two edges is selected
 * the lines are parallel
+
+
+## TDTangentialMeasure.FCMacro
+
+This macro is intended to be used in the TechDraw Workbench.
+
+The idea is to be able to create dimensions between tangents of two arcs.
+A third axis has to be chosen as the perpendicular axis for the tangents.
+
+As TechDraw can not create dimensions along an arbitrary axis (yet), the macro creates four cosmetic
+vertices in order to use the normal distance dimension tool.
+
 
 
 # Licence
