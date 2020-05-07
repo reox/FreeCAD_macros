@@ -12,7 +12,7 @@ Follow the instructions in the FreeCAD wiki regaring [Toolbar Customization](htt
 Do not forget to add the `icons` folder in order to use the provided icons for
 the macros.
 
-## CustomFormat.FCMacro
+## TDCustomFormat.FCMacro
 
 This macro is intended to be used in the TechDraw Workbench.
 It allows you to set the FormatSpec of a dimension enhanced with some common CAD
@@ -41,7 +41,7 @@ Select at least one dimension line which shall be aligned.
 Only DistanceX and DistanceY are supported.
 
 
-## EdgeIntersection.FCMacro
+## TDEdgeIntersection.FCMacro
 
 This macro is intended to be used in the TechDraw Workbench.
 
