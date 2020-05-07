@@ -66,11 +66,11 @@ def find_tangential():
     #      -> Curve (Line)   -> Direction
 
     items = list(map(lambda a: cur_view.getEdgeByIndex(a), indices))
-    
+
     points = []
     directions = []
     radii = []
-    dir = None    
+    dir = None
 
     for item in items:
         if item.Curve.TypeId == 'Part::GeomCircle':
@@ -114,6 +114,15 @@ def find_tangential():
 
     cur_view.makeCosmeticVertex(conv(vert1))
     cur_view.makeCosmeticVertex(conv(vert2))
+
+    # We can "fake" the measurement by creating the point which can be used to measure the distance
+    distance = dir.dot((vert1 - vert2))
+    vert3 = vert2 + (dir * distance)
+    cur_view.makeCosmeticVertex(conv(vert3))
+
+    # Also create the other vertex, so we have an option to choose
+    vert4 = vert1 - (dir * distance)
+    cur_view.makeCosmeticVertex(conv(vert4))
 
 
     # Recompute
