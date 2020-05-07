@@ -16,7 +16,7 @@ __Date__ = '2019-09-16'
 __License__ = 'MIT'
 __Web__ = 'https://github.com/reox/FreeCAD_Macros'
 __Wiki__ = ''
-__Icon__ = 'TDChainDistances.svg'
+__Icon__ = 'icons/TDChainDistances.svg'
 __Help__ = 'Select any number of distances and use the macro. ' \
            'The distances must be parallel. ' \
            'The first distance is taken as reference.'

@@ -4,26 +4,41 @@ to find the tangential points on two circles, which are parallel to a given refe
 
 Select three edges: two circles and a "axis" line.
 
-
-Copyright (c) 2020, Sebastian Bachmann <hello@reox.at>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
+__Name__ = 'TDTangentialMeasure'
+__Comment__ = 'Create a tangential measure on two arcs by aligning to an axis'
+__Author__ = 'Sebastian Bachmann'
+__Version__ = '0.9'
+__Date__ = '2020-05-07'
+__License__ = 'MIT'
+__Web__ = 'https://github.com/reox/FreeCAD_Macros'
+__Wiki__ = ''
+__Icon__ = 'icons/TDTangentialMeasure.svg'
+__Help__ = 'Select two arcs where the tangential measure shall be applied ' \
+           'and an additional straight line which will be the axis. ' \
+           'The macro will create four cosmetic vertices: two at the arcs ' \
+           'and two at the opposing sites in order to apply a distance measure.'
+__Status__ = 'Beta'
+__Requires__ = '>=0.19.18234; py3 only'
+__Communication__ = 'https://github.com/reox/FreeCAD_Macros/issues'
 
+# Copyright (c) 2020, Sebastian Bachmann <hello@reox.at>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import numpy as np
 from PySide.QtGui import QMessageBox
@@ -75,9 +90,6 @@ def find_tangential():
     for item in items:
         if item.Curve.TypeId == 'Part::GeomCircle':
             v1, v2 = item.Vertexes
-
-            print("curve")
-            print(v1.Point, v2.Point, item.Curve.Location, item.Curve.Radius)
             # Calculate the "direction vector" of the circle
             p = (item.Curve.Location - v1.Point) + (item.Curve.Location - v2.Point)
             p.normalize()
@@ -85,19 +97,23 @@ def find_tangential():
             directions.append(p)
             radii.append(item.Curve.Radius)
         elif item.Curve.TypeId == 'Part::GeomLine':
-            print("parallel edge:")
-            print(item.Curve.Direction)
             dir = item.Curve.Direction
         else:
-            print(item.Curve.TypeId)
+            print("Where do I belong?", item.Curve.TypeId)
+
+    if dir is None or len(points) != 2:
+        msg("Wrong Selection", "Please select two arcs and a straight line!")
+        return
 
     p1, p2 = points
     d1, d2 = directions
     r1, r2 = radii
 
     def dir_sign(v1, v2):
+        """Calculate the directional sign of two vectors"""
         a = v1.getAngle(v2)
-        print(a)
+        # TODO: is this correct?! I thought that we would return 1 here and -1 otherwise...
+        #       Probably a problem because of the two coordinate system which are used in TD
         if a < np.pi / 2.0 or a >= (3.0/2.0) * np.pi:
             return -1
         return 1
@@ -105,13 +121,13 @@ def find_tangential():
     def conv(v):
         return App.Vector(v.x, -v.y, v.z) / cur_view.Scale
 
+    # Can be enabled to create a vertex at the arc's center
     #cur_view.makeCosmeticVertex(conv(p1))
     #cur_view.makeCosmeticVertex(conv(p2))
 
-
+    # Tangential points in direction of axis
     vert1 = p1 + dir_sign(dir, d1) * dir * r1
     vert2 = p2 + dir_sign(dir, d2) * dir * r2
-
     cur_view.makeCosmeticVertex(conv(vert1))
     cur_view.makeCosmeticVertex(conv(vert2))
 
