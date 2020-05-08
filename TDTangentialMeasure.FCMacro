@@ -19,7 +19,7 @@ __Help__ = 'Select two arcs where the tangential measure shall be applied ' \
            'The macro will create four cosmetic vertices: two at the arcs ' \
            'and two at the opposing sites in order to apply a distance measure.'
 __Status__ = 'Beta'
-__Requires__ = '>=0.19.18234; py3 only'
+__Requires__ = '>=0.19.20943; py3 only'
 __Communication__ = 'https://github.com/reox/FreeCAD_Macros/issues'
 
 # Copyright (c) 2020, Sebastian Bachmann <hello@reox.at>
@@ -118,27 +118,24 @@ def find_tangential():
             return -1
         return 1
 
-    def conv(v):
-        return App.Vector(v.x, -v.y, v.z) / cur_view.Scale
-
     # Can be enabled to create a vertex at the arc's center
-    #cur_view.makeCosmeticVertex(conv(p1))
-    #cur_view.makeCosmeticVertex(conv(p2))
+    #cur_view.makeCosmeticVertex(p1)
+    #cur_view.makeCosmeticVertex(p2)
 
     # Tangential points in direction of axis
     vert1 = p1 + dir_sign(dir, d1) * dir * r1
     vert2 = p2 + dir_sign(dir, d2) * dir * r2
-    cur_view.makeCosmeticVertex(conv(vert1))
-    cur_view.makeCosmeticVertex(conv(vert2))
+    cur_view.makeCosmeticVertex(vert1)
+    cur_view.makeCosmeticVertex(vert2)
 
     # We can "fake" the measurement by creating the point which can be used to measure the distance
-    distance = dir.dot((vert1 - vert2))
+    distance = dir.dot(vert1 - vert2)
     vert3 = vert2 + (dir * distance)
-    cur_view.makeCosmeticVertex(conv(vert3))
+    cur_view.makeCosmeticVertex(vert3)
 
     # Also create the other vertex, so we have an option to choose
     vert4 = vert1 - (dir * distance)
-    cur_view.makeCosmeticVertex(conv(vert4))
+    cur_view.makeCosmeticVertex(vert4)
 
 
     # Recompute
