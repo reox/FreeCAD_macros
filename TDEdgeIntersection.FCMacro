@@ -17,7 +17,7 @@ __Wiki__ = ''
 __Icon__ = 'icons/EdgeIntersection.svg'
 __Help__ = 'Select two straight lines and run the macro'
 __Status__ = 'Stable'
-__Requires__ = '>=0.19.18234; py3 only'
+__Requires__ = '>=0.19.20943; py3 only'
 __Communication__ = 'https://github.com/reox/FreeCAD_Macros/issues'
 
 
@@ -91,9 +91,7 @@ def find_intersection():
     else:
         x = p.x + t * (q.x - p.x)
         y = r.y + v * (s.y - r.y)
-        # Convert coordinates back to view coordinates
-        # The resulting vector must be converted into UI coordinates
-        res = FreeCAD.Vector(x, -y, 0) / cur_view.Scale
+        res = FreeCAD.Vector(x, y, 0)
 
         # Add the Vertex
         cur_view.makeCosmeticVertex(res)
