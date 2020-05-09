@@ -60,6 +60,7 @@ def is_above(a, b, p):
     # Extra check for division by zero -> vertical line
     if (b.x - a.x) == 0:
         return p.x < a.x
+    print(p.y, (((b.y - a.y) / (b.x - a.x) * (p.x - a.x)) + a.y))
     if p.y > (((b.y - a.y) / (b.x - a.x) * (p.x - a.x)) + a.y):
         return True
     return False
@@ -67,21 +68,46 @@ def is_above(a, b, p):
 
 def get_dim_vec(point):
     """
-    Returns the middle of the dimension, the normal vector and the length to
-    the dimension.
+    Returns the center of the line (m) which the dimension is measuring (a vector),
+    the normal vector (v) on the line of measurement (a unit vector)
+    and the orthogonal length to the dimension from the line.
+
+    All vectors are returned in model space.
     """
+
+    #FIXME: somewhere in this function there is a bug for Dimensions,
+    # that if one of the dimensions is close to the line itself, it will
+        # flip around. Usually, the second click on this macro resolves the issue though
+
+
+    # getLinearPoints() --> returns in model space
+    # dimension .X and .Y --> return in paper space (not scaled, need to divide by scale)
+    # makeCosmeticVertex --> requires scaled paper space
+
+    # a, b are in model space
     a, b = point.getLinearPoints()
     # get the center vector of the line in question
     m = (a + b) / 2.0
 
     # Get the current location of the dimension as a vector
-    # NOTE: has to be converted from GUI coordinates
+    # NOTE: has to be converted from paper space to model space by swapping Y axis
     D = FreeCAD.Vector(point.X, -point.Y, 0)
+
+    # --> If you need to debug the current locations
+    #if len(point.OutList) > 1:
+    #    print("Uhm, outlist has more entries than expected?!")
+    #view = point.OutList[0]
+    # plot the current location of the dimension
+    #view.makeCosmeticVertex(FreeCAD.Vector(point.X, point.Y, 0) / view.Scale)
+    # Plot the center of the line segment
+    #view.makeCosmeticVertex(FreeCAD.Vector(m.x, -m.y, 0) / view.Scale)
 
     # get the line as a vector
     # We want that a is the vector left from b
     # As the sorting in the list might be different, we need to check that.
     if a.x < b.x:
+        # Vector pointing from b to a, i.e. if a is left from b, the vector points
+        # in the negative direction
         l = a - b
     else:
         if a.y < b.y:
@@ -101,7 +127,7 @@ def get_dim_vec(point):
         return m, FreeCAD.Vector(0, 1, 0), D.y - m.y
 
     # If not horizontal or vertical lines; get orthogonal vector on l
-    v = FreeCAD.Vector(l.x ** -1, -(l.y ** -1), 0)
+    v = FreeCAD.Vector(-(l.x ** -1), (l.y ** -1), 0)
     v.normalize()  # Normalize as l might be any orthogonal vector
 
     # We need to know if the dimension line is above or beyond the edge
