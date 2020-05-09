@@ -5,8 +5,7 @@ Some macros are not written by me, but copied from other sources. Please inspect
 
 Most of my macros are designed to work with a Python3/QT5 build of FreeCAD!
 
-**ATTENTION**: due to [changes in TechDraw](https://github.com/FreeCAD/FreeCAD/commit/f2f7d22b8e), some of the TechDraw related macros will only work in a recent Version
->=**0.19.20943**!
+**ATTENTION**: due to [changes in TechDraw](https://github.com/FreeCAD/FreeCAD/commit/f2f7d22b8e), some of the TechDraw related macros will only work in a recent Version **>=0.19.20943**!
 
 # Add the Macros to your toolbar:
 
