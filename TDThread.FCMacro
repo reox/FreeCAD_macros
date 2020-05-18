@@ -14,10 +14,10 @@ __Date__ = '2020-05-07'
 __License__ = 'MIT'
 __Web__ = 'https://github.com/reox/FreeCAD_Macros'
 __Wiki__ = ''
-__Icon__ = 'icons/EdgeIntersection.svg'
+__Icon__ = 'icons/TDThread.svg'
 __Help__ = 'Select two straight lines and run the macro'
 __Status__ = 'Stable'
-__Requires__ = '>=0.19.20943; py3 only'
+__Requires__ = '>=0.19.21099; py3 only'
 __Communication__ = 'https://github.com/reox/FreeCAD_Macros/issues'
 
 
@@ -53,11 +53,18 @@ def msg(title, message):
     diag.exec_()
 
 
-def find_intersection():
+def paint_thread(offset=3):
     """
-    Finds the intersection point of two edges
-    And creates a cosmetic vertex there
+    Paint a thread around a circle in TD
+
+    :param float offset: additional units to draw centerlines outwards in both directions
     """
+    # FIXME: Need to get the correct values here!
+    # Maybe one method would be to have a table of common values and select the ones which are
+    # closest to the hole.
+    thread_depth = 2  # additional size which will be added to the radius
+    thread_size = 'M16'  # What will be written in the dimension
+
     # Get the current view:
     cur_view = Gui.Selection.getSelectionEx()[0].Object
 
@@ -74,65 +81,48 @@ def find_intersection():
         msg("Something is wrong", "Can not parse Edge indices: {}".format(e))
         return
 
+    # 04.1 --> dash dot, small
+    center_style = (4, cur_view.ViewObject.IsoWidth, (0.0, 0.0, 0.0, 1.0), True)
+    # 01.1 --> full line, small
+    thread_style = (1, cur_view.ViewObject.IsoWidth, (0.0, 0.0, 0.0, 1.0), True)
+
     for i in indices:
         curve = cur_view.getEdgeByIndex(i).Curve
 
+        # If we use this coordinate in makeComsmeticVertex, we get the vertex at the center.
+        # X: positive direction to the right of the screen
+        # Y: positive direction to the top of the screen
         center = curve.Location
         radius = curve.Radius
 
-        thread_depth = 2
-        offset = 5
-
         # DIN ISO 6410-1:1993: 3/4 circle, opening and position variable
-        # Line style: 01.1 (full line, small)
         edge = cur_view.makeCosmeticCircleArc(center, radius + thread_depth, 110, 20)
+        cur_view.getCosmeticEdge(edge).Format = thread_style
 
-        x = cur_view.getCosmeticEdge(edge)
-        x.Format = (1, cur_view.ViewObject.IsoWidth, (0.0, 0.0, 0.0, 1.0), True)
-        # Replace Edge
-        rc = cur_view.replaceCosmeticEdge(x)
-
-
-
+        # Make dimension
         r_vec = App.Vector(radius + thread_depth, 0, 0)
-
-        # Create attachment points for thread dimension
-        def conv(v):
-            return App.Vector(v.x, -v.y, v.z) * cur_view.Scale
-
         v1 = center + r_vec
         v2 = center - r_vec
-        # cur_view.makeCosmeticVertex(v1)
-        # cur_view.makeCosmeticVertex(v2)
 
-        # FIXME: Soon, there will be no need for conversion
-        TechDraw.makeDistanceDim(cur_view, 'DistanceX', conv(v1), conv(v2))
-        dim = cur_view.InList[-1]
+        dim = TechDraw.makeDistanceDim(cur_view, 'DistanceX', v1, v2)
+        # NOTE: scaling has to be applied for dimensions!
         dim.X = center.x * cur_view.Scale
-        # TODO: something is off here..
-        dim.Y = (-center.y + (radius + offset)) * cur_view.Scale
+        # TODO: Actually we need to take into account the size between the text and the line..
+        #       Not sure how we can get this programatically
+        dim.Y = (center.y + radius + 3*offset) * cur_view.Scale
         dim.Arbitrary = True
-        dim.FormatSpec = 'M16'
+        dim.FormatSpec = thread_size
 
-
-
-        # TODO create centermark
+        # create centermark
         e = cur_view.makeCosmeticLine(center + App.Vector(0, radius + offset), center - App.Vector(0, radius + offset))
-        x = cur_view.getCosmeticEdge(e)
-        # Center marks are 04.1 --> dash dot small
-        x.Format = (4, cur_view.ViewObject.IsoWidth, (0.0, 0.0, 0.0, 1.0), True)
-        cur_view.replaceCosmeticEdge(x)
+        cur_view.getCosmeticEdge(e).Format = center_style
 
         e = cur_view.makeCosmeticLine(center + App.Vector(radius + offset, 0), center - App.Vector(radius + offset, 0))
-        x = cur_view.getCosmeticEdge(e)
-        x.Format = (4, cur_view.ViewObject.IsoWidth, (0.0, 0.0, 0.0, 1.0), True)
-        cur_view.replaceCosmeticEdge(x)
-
-
+        cur_view.getCosmeticEdge(e).Format = center_style
 
     # Recompute
     App.activeDocument().recompute(None,True,True)
 
 
 if __name__ == "__main__":
-    find_intersection()
+    paint_thread()
