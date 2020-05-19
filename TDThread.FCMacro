@@ -119,6 +119,8 @@ def paint_thread(offset=3):
         e = cur_view.makeCosmeticLine(center + App.Vector(radius + offset, 0), center - App.Vector(radius + offset, 0))
         cur_view.getCosmeticEdge(e).Format = center_style
 
+        cur_view.requestPaint()
+
     # Recompute
     App.activeDocument().recompute(None,True,True)
 
