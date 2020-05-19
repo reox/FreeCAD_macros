@@ -1,13 +1,12 @@
 """
 This Macro is intended to be used in the TechDraw Workbench,
-to find the intersection point of two Edges inside a DrawViewPart.
+it paints a thread according to DIN ISO 6410-1:1993 around a hole.
 
-Select two Egdes and run the Macro. The cosmetic vertex will be created
-at the intersection point.
+THIS ONLY WORKS IN A VERY RECENT VERSION (0.19.21099)!!!
 """
 
-__Name__ = 'TDEdgeIntersection'
-__Comment__ = 'Inserts a cosmetic vertex at the position where two lines intersect'
+__Name__ = 'TDThread'
+__Comment__ = 'Paint threads for holes in TechDraw'
 __Author__ = 'Sebastian Bachmann'
 __Version__ = '1.0'
 __Date__ = '2020-05-07'
@@ -15,7 +14,7 @@ __License__ = 'MIT'
 __Web__ = 'https://github.com/reox/FreeCAD_Macros'
 __Wiki__ = ''
 __Icon__ = 'icons/TDThread.svg'
-__Help__ = 'Select two straight lines and run the macro'
+__Help__ = 'Select a hole and run the macro'
 __Status__ = 'Stable'
 __Requires__ = '>=0.19.21099; py3 only'
 __Communication__ = 'https://github.com/reox/FreeCAD_Macros/issues'
