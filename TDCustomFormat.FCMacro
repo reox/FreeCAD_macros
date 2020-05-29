@@ -39,9 +39,6 @@ __Communication__ = 'https://github.com/reox/FreeCAD_Macros/issues'
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# TODO: once python3 is the standard, remove this
-from __future__ import unicode_literals
-
 # Is a shim provided by FreeCAD
 from PySide.QtGui import (
         QMainWindow,
