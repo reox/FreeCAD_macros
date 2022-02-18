@@ -228,7 +228,7 @@ class VoronoiForm(QDialog):
         self.show()
 
     def setnewseed(self):
-        self.seed.setText(str(np.random.randint(0, 2**32)))
+        self.seed.setText(str(np.random.randint(0, np.iinfo(np.int32).max)))
 
     @staticmethod
     def get_field_as(field, fun):
