@@ -66,7 +66,7 @@ from PySide import QtCore
 def msg(title, message):
     diag = QMessageBox(QMessageBox.Warning, title, message)
     diag.setWindowModality(QtCore.Qt.ApplicationModal)
-    diag.exec_()
+    diag.exec()
 
 
 def sum_conserving_round(inp):
