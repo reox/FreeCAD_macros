@@ -80,6 +80,10 @@ def sum_conserving_round(inp):
         res[items[i]] += 1.0
     return res
 
+def cross2d(x, y):
+    """https://numpy.org/doc/2.2/reference/generated/numpy.cross.html"""
+    return x[..., 0] * y[..., 1] - x[..., 1] * y[..., 0]
+
 
 def triangle_area(v0, v1, v2):
     """
@@ -89,7 +93,7 @@ def triangle_area(v0, v1, v2):
     :param np.array v1: point 2
     :param np.array v2: point 3
     """
-    return norm(np.cross(v1 - v0, v2 - v0)) * 0.5
+    return norm(cross2d(v1 - v0, v2 - v0)) * 0.5
 
 
 def Det(u, v):
