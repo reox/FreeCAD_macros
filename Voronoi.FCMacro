@@ -49,23 +49,23 @@ import numpy as np
 from numpy.linalg import det, norm
 from scipy.spatial import Voronoi, Delaunay, ConvexHull
 
-from PySide.QtGui import (
-        QMainWindow,
-        QDialog,
-        QLineEdit,
-        QPushButton,
-        QGridLayout,
-        QLabel,
-        QGroupBox,
-        QSpacerItem,
-        QMessageBox,
-        )
-from PySide import QtCore
+from PySide6.QtWidgets import (
+    QMainWindow,
+    QDialog,
+    QLineEdit,
+    QPushButton,
+    QGridLayout,
+    QLabel,
+    QGroupBox,
+    QSpacerItem,
+    QMessageBox,
+)
+from PySide6.QtCore import Qt
 
 
 def msg(title, message):
     diag = QMessageBox(QMessageBox.Warning, title, message)
-    diag.setWindowModality(QtCore.Qt.ApplicationModal)
+    diag.setWindowModality(Qt.ApplicationModal)
     diag.exec()
 
 
