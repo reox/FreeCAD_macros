@@ -1,7 +1,7 @@
 """
-This macro is inteneded to be used in the Sketcher Workbench.
+This macro is inteneded to be used in the Part-Design Workbench.
 
-The idea is to place down some points, which are the center points of the Voronoi cells.
+The idea is to select a face of an object, on which it places down some points, which are the center points of the Voronoi cells.
 The macro will compute the convex hull of the points, a Voronoi tesselation
 and additionally offset all Voronoi cells in such a way, that they can be used
 as pockets.
@@ -15,18 +15,18 @@ and run the macro inside an active sketch.
 __Name__ = 'PDVoronoiFace'
 __Comment__ = 'Create Voronoi Pattern on Face'
 __Author__ = 'Sebastian Bachmann'
-__Version__ = '0.0.1'
-__Date__ = '2020-02-28'
+__Version__ = '0.0.2'
+__Date__ = '2026-04-22'
 __License__ = 'MIT'
 __Web__ = 'https://github.com/reox/FreeCAD_Macros'
 __Wiki__ = ''
 __Icon__ = 'PDVoronoi.svg'
 __Help__ = 'Select a face'
 __Status__ = 'Beta'
-__Requires__ = '>=0.19.18234; py3 only'
+__Requires__ = '>=1.1.0; py3 only'
 __Communication__ = 'https://github.com/reox/FreeCAD_Macros/issues'
 """
-Copyright (c) 2019, Sebastian Bachmann <hello@reox.at>
+Copyright (c) 2019-2026, Sebastian Bachmann <hello@reox.at>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -393,7 +393,6 @@ def voronoi_on_face(n, offset, tol):
         return
 
     face = so[0]
-    print(face.Wires)
 
     poly_points, simplices = face.tessellate(tol)
     # We need lists instead if tuples for numpy to be able to return items from
@@ -412,8 +411,9 @@ def voronoi_on_face(n, offset, tol):
 
     sketch = App.ActiveDocument.addObject('Sketcher::SketchObject', 'Voronoi_Sketch')
     body.addObject(sketch)
+    sketch.AttacherEngine = 'Engine 3D'
     sketch.MapMode = 'FlatFace'
-    sketch.Support = (feature, face_name)
+    sketch.AttachmentSupport = (feature, face_name)
 
     # We need the placement to calculate the points in the sketch...
     # This transform will convert all points on the surface into 2D sketch
@@ -441,7 +441,6 @@ def voronoi_on_face(n, offset, tol):
     fill_voronoi_offset(sketch, points, face.transformed(transform), offset)
 
     App.ActiveDocument.recompute()
-
 
 
 if __name__ == "__main__":
